@@ -126,5 +126,8 @@ SPECTACULAR_SETTINGS = {
     'VERSION': '1.0.0',
     
 }
-# our apps
+# Production static files
+import os
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+STATICFILES_STORAGE = 'django.contrib.staticfiles.storage.StaticFilesStorage'
     
