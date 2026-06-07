@@ -71,4 +71,5 @@ job_tracker/
 ├── docker-compose.yml
 ├── pytest.ini
 └── requirements.txt
+![Swagger UI](swagger_screenshot.png)
 ```
