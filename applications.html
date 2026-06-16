@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Applications — Job Tracker</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+<link rel="stylesheet" href="shell.css">
+<style>
+  .toolbar {
+    display: flex; gap: 12px; margin-bottom: 22px; flex-wrap: wrap; align-items: center;
+  }
+  .toolbar input[type="search"] {
+    background: var(--bg-input); border: 1px solid var(--border); border-radius: var(--radius-sm);
+    padding: 10px 14px; color: var(--text-hi); font-size: 14px; min-width: 220px; flex: 1; max-width: 320px;
+  }
+  .toolbar select {
+    background: var(--bg-input); border: 1px solid var(--border); border-radius: var(--radius-sm);
+    padding: 10px 14px; color: var(--text-hi); font-size: 14px;
+  }
+
+  .table-card { overflow: hidden; }
+  table { width: 100%; border-collapse: collapse; }
+  thead th {
+    text-align: left; font-size: 12px; text-transform: uppercase; letter-spacing: 0.04em;
+    color: var(--text-low); font-weight: 600; padding: 14px 18px; border-bottom: 1px solid var(--border-soft);
+  }
+  tbody td { padding: 14px 18px; border-bottom: 1px solid var(--border-soft); font-size: 14px; }
+  tbody tr:last-child td { border-bottom: none; }
+  tbody tr { transition: background 0.15s var(--ease); cursor: pointer; }
+  tbody tr:hover { background: var(--bg-surface-2); }
+  .cell-company { font-weight: 600; }
+  .cell-role { color: var(--text-mid); font-size: 13px; }
+  .cell-date { color: var(--text-mid); font-size: 13px; white-space: nowrap; }
+
+  .badge {
+    font-size: 11.5px; font-weight: 600; padding: 4px 10px; border-radius: 100px; white-space: nowrap;
+  }
+  .badge-Applied { background: rgba(168,85,247,0.15); color: var(--accent-soft); }
+  .badge-Screening { background: rgba(251,191,36,0.15); color: var(--warning); }
+  .badge-Interview { background: rgba(109,40,217,0.18); color: #C9A8FF; }
+  .badge-Offer { background: rgba(52,211,153,0.15); color: var(--success); }
+  .badge-Rejected { background: rgba(251,113,133,0.15); color: var(--danger); }
+  .badge-Withdrawn { background: rgba(117,107,150,0.2); color: var(--text-mid); }
+
+  .empty-state { padding: 70px 20px; text-align: center; }
+  .empty-state h3 { font-size: 17px; margin-bottom: 8px; }
+  .empty-state p { color: var(--text-mid); font-size: 14px; margin-bottom: 18px; }
+
+  /* Modal */
+  .modal-overlay {
+    position: fixed; inset: 0; background: rgba(10,7,20,0.6);
+    display: none; align-items: center; justify-content: center; z-index: 100; padding: 20px;
+  }
+  .modal-overlay.show { display: flex; }
+  .modal-box {
+    background: var(--bg-surface); border: 1px solid var(--border-soft); border-radius: var(--radius-lg);
+    padding: 28px; width: 100%; max-width: 480px; max-height: 90vh; overflow-y: auto;
+    box-shadow: var(--shadow-glow);
+  }
+  .modal-box h3 { font-size: 19px; margin-bottom: 18px; }
+  .modal-form { display: flex; flex-direction: column; gap: 14px; }
+  .modal-row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .modal-actions { display: flex; gap: 10px; margin-top: 6px; }
+  .modal-actions .btn { flex: 1; }
+
+  @media (max-width: 700px) {
+    thead { display: none; }
+    table, tbody, tr, td { display: block; width: 100%; }
+    tbody tr { border-bottom: 1px solid var(--border-soft); padding: 12px 18px; }
+    tbody td { border-bottom: none; padding: 4px 0; }
+    .cell-date { display: none; }
+  }
+</style>
+</head>
+<body>
+  <div class="app-shell">
+    <div id="sidebarMount"></div>
+
+    <main class="main-content">
+      <div class="page-header">
+        <div>
+          <h1>Applications</h1>
+          <p class="sub">Every role you've applied to, in one place.</p>
+        </div>
+        <button class="btn btn-primary" id="openAddModal">+ Add application</button>
+      </div>
+
+      <div class="toolbar">
+        <input type="search" id="searchInput" placeholder="Search company or role…">
+        <select id="statusFilter">
+          <option value="">All statuses</option>
+          <option value="Applied">Applied</option>
+          <option value="Screening">Screening</option>
+          <option value="Interview">Interview</option>
+          <option value="Offer">Offer</option>
+          <option value="Rejected">Rejected</option>
+          <option value="Withdrawn">Withdrawn</option>
+        </select>
+      </div>
+
+      <div class="card table-card">
+        <div id="tableMount">
+          <div style="padding:24px">
+            <div class="skeleton" style="height:44px;margin-bottom:10px"></div>
+            <div class="skeleton" style="height:44px;margin-bottom:10px"></div>
+            <div class="skeleton" style="height:44px"></div>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- Add application modal -->
+  <div class="modal-overlay" id="modalOverlay">
+    <div class="modal-box">
+      <h3>Add application</h3>
+      <div class="error-banner" id="modalError"></div>
+      <form class="modal-form" id="addForm">
+        <div class="field">
+          <label for="mCompany">Company *</label>
+          <input type="text" id="mCompany" required placeholder="e.g. Google">
+        </div>
+        <div class="field">
+          <label for="mRole">Role *</label>
+          <input type="text" id="mRole" required placeholder="e.g. Python Developer">
+        </div>
+        <div class="modal-row2">
+          <div class="field">
+            <label for="mStatus">Status</label>
+            <select id="mStatus">
+              <option value="Applied">Applied</option>
+              <option value="Screening">Screening</option>
+              <option value="Interview">Interview</option>
+              <option value="Offer">Offer</option>
+              <option value="Rejected">Rejected</option>
+              <option value="Withdrawn">Withdrawn</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="mLocation">Location</label>
+            <input type="text" id="mLocation" placeholder="e.g. Pune">
+          </div>
+        </div>
+        <div class="field">
+          <label for="mSalary">Salary range</label>
+          <input type="text" id="mSalary" placeholder="e.g. 8-12 LPA">
+        </div>
+        <div class="modal-actions">
+          <button type="button" class="btn btn-ghost" id="cancelModal">Cancel</button>
+          <button type="submit" class="btn btn-primary" id="modalSubmitBtn">Add application</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script src="api.js"></script>
+  <script src="sidebar.js"></script>
+  <script>
+    requireAuth();
+    renderSidebar("applications");
+
+    let allApps = [];
+
+    async function loadApplications() {
+      try {
+        const res = await Api.listApplications();
+        allApps = res.results || res;
+        renderTable();
+      } catch (err) {
+        showToast(err.message || "Couldn't load applications.", "error");
+        document.getElementById("tableMount").innerHTML = `<div class="empty-state"><h3>Couldn't load applications</h3><p>${escapeHtml(err.message || "")}</p><button class="btn btn-ghost" onclick="loadApplications()">Retry</button></div>`;
+      }
+    }
+
+    function renderTable() {
+      const search = document.getElementById("searchInput").value.toLowerCase();
+      const statusFilter = document.getElementById("statusFilter").value;
+
+      let filtered = allApps.filter(app => {
+        const matchesSearch = !search ||
+          app.company_name.toLowerCase().includes(search) ||
+          app.role_title.toLowerCase().includes(search);
+        const matchesStatus = !statusFilter || app.status === statusFilter;
+        return matchesSearch && matchesStatus;
+      });
+
+      const mount = document.getElementById("tableMount");
+
+      if (!allApps.length) {
+        mount.innerHTML = `
+          <div class="empty-state">
+            <h3>No applications yet</h3>
+            <p>Add the first role you've applied to and start tracking it through every stage.</p>
+            <button class="btn btn-primary" onclick="document.getElementById('openAddModal').click()">+ Add application</button>
+          </div>`;
+        return;
+      }
+
+      if (!filtered.length) {
+        mount.innerHTML = `<div class="empty-state"><h3>No matches</h3><p>Try a different search or status filter.</p></div>`;
+        return;
+      }
+
+      mount.innerHTML = `
+        <table>
+          <thead>
+            <tr>
+              <th>Company</th><th>Role</th><th>Status</th><th>Location</th><th>Applied</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${filtered.map(app => `
+              <tr onclick="window.location.href='application-detail.html?id=${app.id}'">
+                <td class="cell-company">${escapeHtml(app.company_name)}</td>
+                <td class="cell-role">${escapeHtml(app.role_title)}</td>
+                <td><span class="badge badge-${app.status}">${app.status}</span></td>
+                <td class="cell-role">${escapeHtml(app.location || "—")}</td>
+                <td class="cell-date">${formatDate(app.created_at)}</td>
+              </tr>
+            `).join("")}
+          </tbody>
+        </table>
+      `;
+    }
+
+    function formatDate(iso) {
+      if (!iso) return "—";
+      const d = new Date(iso);
+      return d.toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" });
+    }
+
+    function escapeHtml(str) {
+      const div = document.createElement("div");
+      div.textContent = str ?? "";
+      return div.innerHTML;
+    }
+
+    document.getElementById("searchInput").addEventListener("input", renderTable);
+    document.getElementById("statusFilter").addEventListener("change", renderTable);
+
+    // Modal
+    const overlay = document.getElementById("modalOverlay");
+    document.getElementById("openAddModal").addEventListener("click", () => overlay.classList.add("show"));
+    document.getElementById("cancelModal").addEventListener("click", () => overlay.classList.remove("show"));
+    overlay.addEventListener("click", (e) => { if (e.target === overlay) overlay.classList.remove("show"); });
+
+    document.getElementById("addForm").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const errEl = document.getElementById("modalError");
+      hideError(errEl);
+      const btn = document.getElementById("modalSubmitBtn");
+      btn.disabled = true;
+      btn.innerHTML = '<span class="spinner"></span>';
+
+      const payload = {
+        company_name: document.getElementById("mCompany").value.trim(),
+        role_title: document.getElementById("mRole").value.trim(),
+        status: document.getElementById("mStatus").value,
+        location: document.getElementById("mLocation").value.trim(),
+        salary_range: document.getElementById("mSalary").value.trim(),
+      };
+
+      try {
+        await Api.createApplication(payload);
+        showToast("Application added.");
+        overlay.classList.remove("show");
+        document.getElementById("addForm").reset();
+        loadApplications();
+      } catch (err) {
+        showError(errEl, err.message || "Couldn't add application.");
+      } finally {
+        btn.disabled = false;
+        btn.textContent = "Add application";
+      }
+    });
+
+    // Open modal automatically if ?new=1
+    if (new URLSearchParams(window.location.search).get("new") === "1") {
+      overlay.classList.add("show");
+    }
+
+    loadApplications();
+  </script>
+</body>
+</html>
