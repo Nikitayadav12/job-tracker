@@ -33,7 +33,6 @@
   .auth-box h1 { font-size: 28px; margin-bottom: 8px; }
   .auth-box .sub { color: var(--text-mid); font-size: 14.5px; margin-bottom: 28px; }
   form { display: flex; flex-direction: column; gap: 16px; }
-  .name-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
   .auth-box .btn-primary { width: 100%; padding: 13px; margin-top: 4px; }
   .switch-line { margin-top: 22px; text-align: center; font-size: 13.5px; color: var(--text-mid); }
   .switch-line a { color: var(--accent-soft); font-weight: 600; }
@@ -43,9 +42,6 @@
   @media (max-width: 880px) {
     .auth-shell { grid-template-columns: 1fr; }
     .auth-art { display: none; }
-  }
-  @media (max-width: 440px) {
-    .name-row { grid-template-columns: 1fr; }
   }
 </style>
 </head>
@@ -72,15 +68,9 @@
         <div class="error-banner" id="errorBanner"></div>
 
         <form id="registerForm">
-          <div class="name-row">
-            <div class="field">
-              <label for="firstName">First name</label>
-              <input type="text" id="firstName" name="first_name" placeholder="Nikita" autocomplete="given-name">
-            </div>
-            <div class="field">
-              <label for="lastName">Last name</label>
-              <input type="text" id="lastName" name="last_name" placeholder="Yadav" autocomplete="family-name">
-            </div>
+          <div class="field">
+            <label for="username">Username</label>
+            <input type="text" id="username" name="username" placeholder="nikitayadav" required autocomplete="username">
           </div>
           <div class="field">
             <label for="email">Email</label>
@@ -88,8 +78,8 @@
           </div>
           <div class="field">
             <label for="password">Password</label>
-            <input type="password" id="password" name="password" placeholder="At least 8 characters" required autocomplete="new-password" minlength="8">
-            <span class="hint">Use 8+ characters with a mix of letters and numbers.</span>
+            <input type="password" id="password" name="password" placeholder="At least 6 characters" required autocomplete="new-password" minlength="6">
+            <span class="hint">Use 6+ characters with a mix of letters and numbers.</span>
           </div>
           <button type="submit" class="btn btn-primary" id="submitBtn">
             <span id="btnLabel">Create account</span>
@@ -117,8 +107,7 @@
       btnLabel.innerHTML = '<span class="spinner"></span>';
 
       const payload = {
-        first_name: document.getElementById("firstName").value.trim(),
-        last_name: document.getElementById("lastName").value.trim(),
+        username: document.getElementById("username").value.trim(),
         email: document.getElementById("email").value.trim(),
         password: document.getElementById("password").value,
       };

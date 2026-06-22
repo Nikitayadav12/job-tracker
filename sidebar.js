@@ -46,8 +46,8 @@ function renderSidebar(activePage) {
 async function loadUserChip() {
   try {
     const user = await Api.profile();
-    const name = [user.first_name, user.last_name].filter(Boolean).join(" ") || user.email;
-    const initials = (user.first_name ? user.first_name[0] : user.email[0]).toUpperCase();
+    const name = user.username || user.email;
+    const initials = (user.username ? user.username[0] : user.email[0]).toUpperCase();
     document.getElementById("userAvatar").textContent = initials;
     document.getElementById("userName").textContent = name;
     document.getElementById("userEmail").textContent = user.email;
